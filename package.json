@@ -6,7 +6,7 @@
         "name": "Keng Yang",
         "email": "yang1194@stthomas.edu"
     },
-    "contributors": [],
+    "contributors": ["Vincent Lam", "Alejandro Koenen"],
     "repository": {},
     "dependencies": {
         "express": "^4.21.2",
