@@ -6,8 +6,13 @@
         "name": "Keng Yang",
         "email": "yang1194@stthomas.edu"
     },
-    "contributors": ["Vincent Lam", "Alejandro Koenen"],
-    "repository": {"url": "https://github.com/KwazyKeng/webdev-rest"},
+    "contributors": [
+        "Vincent Lam",
+        "Alejandro Koenen"
+    ],
+    "repository": {
+        "url": "https://github.com/KwazyKeng/webdev-rest"
+    },
     "dependencies": {
         "express": "^4.21.2",
         "sqlite3": "^5.1.7"
