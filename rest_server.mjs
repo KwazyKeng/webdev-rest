@@ -5,7 +5,7 @@ import { default as express, json } from 'express';
 import { default as sqlite3 } from 'sqlite3';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
-const db_filename = path.join(__dirname, 'db', 'stpaul_crime2.sqlite3');
+const db_filename = path.join(__dirname, 'db', 'stpaul_crime.sqlite3');
 
 let public_dir = './public';
 
