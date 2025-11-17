@@ -5,7 +5,7 @@ import { default as express, json } from 'express';
 import { default as sqlite3 } from 'sqlite3';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
-const db_filename = path.join(__dirname, 'db', 'stpaul_crime.sqlite3');
+const db_filename = path.join(__dirname, 'db', 'stpaul_crime2.sqlite3');
 
 let public_dir = './public';
 
@@ -129,12 +129,34 @@ app.put('/new-incident', (req, res) => {
         return;
     }
 
-    const sql = `INSERT INTO Incidents (case_number, date, time, code, incident, police_grid, neighborhood_number, block)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+    const date_time = `${date}T${time}`;
 
-    
+    const sql = `INSERT INTO Incidents (case_number, date_time, code, incident, police_grid, neighborhood_number, block)
+                VALUES (?, ?, ?, ?, ?, ?, ?)`;
 
-    res.status(200).type('txt').send('OK'); // <-- you may need to change this
+    const params = [
+        case_number,
+        date_time,
+        code,
+        incident,
+        police_grid,
+        neighborhood_number,
+        block
+    ];
+
+    dbRun(sql, params)
+    .then(() => {
+        res.status(200).type('txt').send('success');
+    })
+    .catch(err => {
+        console.error('error inserting incident', err);
+        if (err.code === 'SQLITE_CONSTRAINT') {
+            res.status(400).type('txt').send('Incident already exists');
+        }
+        else {
+            res.status(500).type('txt').send('Database error');
+        }
+    })
 });
 
 // DELETE request handler for new crime incident
