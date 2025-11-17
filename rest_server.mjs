@@ -7,9 +7,12 @@ import { default as sqlite3 } from 'sqlite3';
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const db_filename = path.join(__dirname, 'db', 'stpaul_crime.sqlite3');
 
-const port = 8000;
+let public_dir = './public';
+
+const port = 8080;
 
 let app = express();
+app.use(express.static(public_dir));
 app.use(express.json());
 
 /********************************************************************
@@ -81,6 +84,25 @@ app.get('/incidents', (req, res) => {
 app.put('/new-incident', (req, res) => {
     console.log(req.body); // uploaded data
     
+    const case_number = req.body.case_number;
+    const date = req.body.date;
+    const time = req.body.time;
+    const code = req.body.code;
+    const incident = req.body.incident;
+    const police_grid = req.body.police_grid;
+    const neighborhood_number = req.body.neighborhood_number;
+    const block = req.body.block;
+
+    if (!case_number || !date || !time || !code || !incident || !police_grid || !neighborhood_number || !block) {
+        res.status(400).type('txt').send('Missing one or more required fields');
+        return;
+    }
+
+    const sql = `INSERT INTO Incidents (case_number, date, time, code, incident, police_grid, neighborhood_number, block)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+
+    
+
     res.status(200).type('txt').send('OK'); // <-- you may need to change this
 });
 
