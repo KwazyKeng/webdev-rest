@@ -8,8 +8,10 @@ const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const db_filename = path.join(__dirname, 'db', 'stpaul_crime.sqlite3');
 
 const port = 8000;
+let public_dur = "./public";
 
 let app = express();
+app.use(express.static(public_dur));
 app.use(express.json());
 
 /********************************************************************
@@ -73,8 +75,7 @@ app.get('/neighborhoods', (req, res) => {
 // GET request handler for crime incidents
 app.get('/incidents', (req, res) => {
     console.log(req.query); // query object (key-value pairs after the ? in the url)
-    
-    res.status(200).type('json').send({}); // <-- you will need to change this
+    res.status(200).type('json').send(); // <-- you will need to change this
 });
 
 // PUT request handler for new crime incident
@@ -87,8 +88,16 @@ app.put('/new-incident', (req, res) => {
 // DELETE request handler for new crime incident
 app.delete('/remove-incident', (req, res) => {
     console.log(req.body); // uploaded data
-    
-    res.status(200).type('txt').send('OK'); // <-- you may need to change this
+    let case_num = req.body.case_number;
+    let sql = "DELETE FROM Incidents WHERE case_number = ?";
+    dbRun(sql,[case_num])
+        .then(() =>{
+            res.status(200).type('txt').send("success");
+        })
+        .catch((err) =>{
+            console.log(err);
+            res.status(500).type('txt').send("SQL error");
+        })
 });
 
 /********************************************************************
