@@ -1,7 +1,7 @@
 import * as path from 'node:path';
 import * as url from 'node:url';
 
-import { default as express } from 'express';
+import { default as express, json } from 'express';
 import { default as sqlite3 } from 'sqlite3';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
@@ -60,24 +60,55 @@ function dbRun(query, params) {
  ***   REST REQUEST HANDLERS                                      *** 
  ********************************************************************/
 // GET request handler for crime codes
-app.get('/codes', (req, res) => {
-    console.log(req.query); // query object (key-value pairs after the ? in the url)
-    
-    res.status(200).type('json').send({}); // <-- you will need to change this
+app.get('/codes', async (req, res) => {
+    try {
+        const rows = await dbSelect(
+            'SELECT code, incident_type AS type FROM Codes ORDER BY code ASC',
+            []
+        );
+        res.status(200).type('json').send(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).type('json').send({ error: 'Database error' });
+    }
 });
 
 // GET request handler for neighborhoods
-app.get('/neighborhoods', (req, res) => {
-    console.log(req.query); // query object (key-value pairs after the ? in the url)
-    
-    res.status(200).type('json').send({}); // <-- you will need to change this
+app.get('/neighborhoods', async (req, res) => {
+    try {
+        const rows = await dbSelect(
+            'SELECT neighborhood_number AS id, neighborhood_name AS name FROM Neighborhoods ORDER BY neighborhood_number ASC',
+            []
+        );
+        res.status(200).type('json').send(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).type('json').send({ error: 'Database error' });
+    }
 });
 
 // GET request handler for crime incidents
-app.get('/incidents', (req, res) => {
-    console.log(req.query); // query object (key-value pairs after the ? in the url)
-    
-    res.status(200).type('json').send({}); // <-- you will need to change this
+app.get('/incidents', async (req, res) => {
+    try {
+        const rows = await dbSelect(
+            `SELECT
+                case_number,
+                date(date_time) AS date,
+                time(date_time) AS time,
+                code,
+                incident,
+                police_grid,
+                neighborhood_number,
+                block
+             FROM Incidents
+             ORDER BY datetime(date_time) DESC`,
+            []
+        );
+        res.status(200).type('json').send(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).type('json').send({ error: 'Database error' });
+    }
 });
 
 // PUT request handler for new crime incident
