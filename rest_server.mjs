@@ -169,12 +169,12 @@ app.delete('/remove-incident', (req, res) => {
     dbSelect(sql2,[case_num])
         .then((rows) =>{
             if(rows.length === 0){
-                res.status(500).type('txt').send("Case Number doesn't exist");
+                res.status(500).type('txt').send("Case Number: " + case_num + ", doesn't exist");
                 return;
             }
             dbRun(sql,[case_num])
                 .then(() =>{
-                    res.status(200).type('txt').send("Case number: " + case_num + " successfully deleted");
+                    res.status(200).type('txt').send("Case number: " + case_num + ", successfully deleted");
                 })
                 .catch((err) =>{
                     console.log(err);
