@@ -61,30 +61,82 @@ function dbRun(query, params) {
  ********************************************************************/
 // GET request handler for crime codes
 app.get('/codes', async (req, res) => {
-    try {
-        const rows = await dbSelect(
-            'SELECT code, incident_type AS type FROM Codes ORDER BY code ASC',
-            []
-        );
-        res.status(200).type('json').send(rows);
-    } catch (err) {
-        console.error(err);
-        res.status(500).type('json').send({ error: 'Database error' });
+    let codeParam = req.query.code;
+    let sql;
+    let params = [];
+
+    if (!codeParam) {
+        sql = 'SELECT code, incident_type AS type FROM Codes ORDER BY code ASC';    
+    } else {
+        let codes = [];
+        let codeStrings = codeParam.split(',');
+
+        for (let i = 0; i < codeStrings.length; i++) {
+            let num = Number(codeStrings[i].trim());
+            if (!Number.isNaN(num)) {
+                codes.push(num);
+            }
+        }
+
+        // wrong input given
+        if (codes.length === 0) {
+            res.status(400).type('txt').send('Invalid code parameter');
+            return;
+        }
+
+        let placeholders = codes.map(() => '?').join(',');    
+        sql = 'SELECT code, incident_type AS type FROM Codes WHERE code IN (' + placeholders + ') ORDER BY code ASC';
+        params = codes;
     }
+    
+    dbSelect(sql, params)
+    .then(rows => {
+        res.status(200).type('json').send(rows);
+    })
+    .catch(err => {
+        console.log(err);
+        res.status(500).type('text').send('Error', err);
+    })
 });
 
 // GET request handler for neighborhoods
 app.get('/neighborhoods', async (req, res) => {
-    try {
-        const rows = await dbSelect(
-            'SELECT neighborhood_number AS id, neighborhood_name AS name FROM Neighborhoods ORDER BY neighborhood_number ASC',
-            []
-        );
-        res.status(200).type('json').send(rows);
-    } catch (err) {
-        console.error(err);
-        res.status(500).type('json').send({ error: 'Database error' });
+    let idParam = req.query.id;
+    let sql;
+    let params = [];
+
+    if (!idParam) {
+        sql = 'SELECT neighborhood_number AS id, neighborhood_name AS name FROM Neighborhoods ORDER BY neighborhood_number ASC';
+    } else {
+        let ids = [];
+        let idString = idParam.split(',');
+
+        for (let i = 0; i < idString.length; i++) {
+            let num = Number(idString[i].trim());
+            if (!Number.isNaN(num)) {
+                ids.push(num);
+            }
+        }
+
+        // wrong input given
+        if (ids.length === 0) {
+            res.status(400).type('txt').send('Invalid id parameter');
+            return;
+        }
+
+        let placeholders = ids.map(() => '?').join(',');    
+        sql = 'SELECT neighborhood_number AS id, neighborhood_name AS name FROM Neighborhoods WHERE neighborhood_number IN (' + placeholders + ') ORDER BY neighborhood_number ASC';
+        params = ids;
     }
+    
+    dbSelect(sql, params)
+    .then(rows => {
+        res.status(200).type('json').send(rows);
+    })
+    .catch(err => {
+        console.log(err);
+        res.status(500).type('text').send('Error', err);
+    })
 });
 
 // GET request handler for crime incidents
@@ -116,26 +168,26 @@ app.get('/incidents', async (req, res) => {
 app.put('/new-incident', (req, res) => {
     console.log(req.body); // uploaded data
     
-    const case_number = req.body.case_number;
-    const date = req.body.date;
-    const time = req.body.time;
-    const code = req.body.code;
-    const incident = req.body.incident;
-    const police_grid = req.body.police_grid;
-    const neighborhood_number = req.body.neighborhood_number;
-    const block = req.body.block;
+    let case_number = req.body.case_number;
+    let date = req.body.date;
+    let time = req.body.time;
+    let code = req.body.code;
+    let incident = req.body.incident;
+    let police_grid = req.body.police_grid;
+    let neighborhood_number = req.body.neighborhood_number;
+    let block = req.body.block;
 
     if (!case_number || !date || !time || !code || !incident || !police_grid || !neighborhood_number || !block) {
         res.status(400).type('txt').send('Missing one or more required fields');
         return;
     }
 
-    const date_time = `${date}T${time}`;
+    let date_time = `${date}T${time}`;
 
-    const sql = `INSERT INTO Incidents (case_number, date_time, code, incident, police_grid, neighborhood_number, block)
+    let sql = `INSERT INTO Incidents (case_number, date_time, code, incident, police_grid, neighborhood_number, block)
                 VALUES (?, ?, ?, ?, ?, ?, ?)`;
 
-    const params = [
+    let params = [
         case_number,
         date_time,
         code,
@@ -152,7 +204,7 @@ app.put('/new-incident', (req, res) => {
     .catch(err => {
         console.error('error inserting incident', err);
         if (err.code === 'SQLITE_CONSTRAINT') {
-            res.status(400).type('txt').send('Incident already exists');
+            res.status(500).type('txt').send('Incident already exists');
         }
         else {
             res.status(500).type('txt').send('Database error');
