@@ -9,7 +9,7 @@ const db_filename = path.join(__dirname, 'db', 'stpaul_crime.sqlite3');
 
 let public_dir = './public';
 
-const port = 8080;
+const port = 8000;
 
 let app = express();
 app.use(express.static(public_dir));
@@ -217,11 +217,23 @@ app.delete('/remove-incident', (req, res) => {
     console.log(req.body); // uploaded data
     let case_num = req.body.case_number;
     let sql = "DELETE FROM Incidents WHERE case_number = ?";
-    dbRun(sql,[case_num])
-        .then(() =>{
-            res.status(200).type('txt').send("success");
+    let sql2 = "SELECT * FROM Incidents WHERE case_number = ?";
+    dbSelect(sql2,[case_num])
+        .then((rows) =>{
+            if(rows.length === 0){
+                res.status(500).type('txt').send("Case Number: " + case_num + ", doesn't exist");
+                return;
+            }
+            dbRun(sql,[case_num])
+                .then(() =>{
+                    res.status(200).type('txt').send("Case number: " + case_num + ", successfully deleted");
+                })
+                .catch((err) =>{
+                    console.log(err);
+                    res.status(500).type('txt').send("SQL error");
+                })
         })
-        .catch((err) =>{
+        .catch((err)=>{
             console.log(err);
             res.status(500).type('txt').send("SQL error");
         })
