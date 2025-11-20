@@ -174,7 +174,7 @@ app.delete('/remove-incident', (req, res) => {
             }
             dbRun(sql,[case_num])
                 .then(() =>{
-                    res.status(200).type('txt').send("Case number: " + case_num + ", successfully deleted");
+                    res.status(200).type('txt').send("Case Number: " + case_num + ", successfully deleted");
                 })
                 .catch((err) =>{
                     console.log(err);
