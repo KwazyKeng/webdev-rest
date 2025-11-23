@@ -143,8 +143,42 @@ app.get('/neighborhoods', async (req, res) => {
 
 app.get('/incidents', async (req, res) => {
     try {
-        const rows = await dbSelect(
-            `SELECT
+        const {
+            start_date,
+            end_date,
+            code,
+            grid,
+            neighborhood,
+            limit: limitRaw
+        } = req.query;
+
+        //validate dates
+        const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+        if (start_date && !datePattern.test(String(start_date))) {
+            return res.status(400).type('json').send({
+                error: 'start_date must be in YYYY-MM-DD format'
+            });
+        }
+        if (end_date && !datePattern.test(String(end_date))) {
+            return res.status(400).type('json').send({
+                error: 'end_date must be in YYYY-MM-DD format'
+            });
+        }
+
+        //limit (default 1000)
+        let limit = 1000;
+        if (limitRaw !== undefined && String(limitRaw).trim() !== '') {
+            const n = Number(limitRaw);
+            if (!Number.isInteger(n) || n <= 0) {
+                return res.status(400).type('json').send({
+                    error: 'limit must be a positive integer'
+                });
+            }
+            limit = n;
+        }
+
+        let sql = `
+            SELECT
                 case_number,
                 date(date_time) AS date,
                 time(date_time) AS time,
@@ -153,10 +187,61 @@ app.get('/incidents', async (req, res) => {
                 police_grid,
                 neighborhood_number,
                 block
-             FROM Incidents
-             ORDER BY datetime(date_time) DESC`,
-            []
-        );
+            FROM Incidents
+        `;
+        const params = [];
+        const where = [];
+
+        //date range filters
+        if (start_date) {
+            where.push('date(date_time) >= ?');
+            params.push(start_date);
+        }
+        if (end_date) {
+            where.push('date(date_time) <= ?');
+            params.push(end_date);
+        }
+
+        // helper INSIDE this route to add int-list filters
+        function addIntListFilter(rawValue, columnName, paramName) {
+            if (rawValue === undefined) return; // no filter
+            const rawList = String(rawValue).split(',')
+                .map(s => s.trim())
+                .filter(s => s.length > 0);
+            const nums = rawList.map(v => Number(v));
+            if (rawList.length === 0 || nums.some(n => !Number.isInteger(n))) {
+                throw {
+                    clientError: true,
+                    message: `Query parameter "${paramName}" must be a comma-separated list of integers`
+                };
+            }
+            where.push(`${columnName} IN (${nums.map(() => '?').join(',')})`);
+            params.push(...nums);
+        }
+
+        //code, grid, neighborhood filters
+        try {
+            addIntListFilter(code, 'code', 'code');
+            addIntListFilter(grid, 'police_grid', 'grid');
+            addIntListFilter(neighborhood, 'neighborhood_number', 'neighborhood');
+        } catch (e) {
+            if (e.clientError) {
+                return res.status(400).type('json').send({ error: e.message });
+            }
+            throw e; // real error, handled by catch below
+        }
+
+        // apply WHERE if we have any filters
+        if (where.length > 0) {
+            sql += ' WHERE ' + where.join(' AND ');
+        }
+
+        // most recent first + limit
+        sql += ' ORDER BY datetime(date_time) DESC';
+        sql += ' LIMIT ?';
+        params.push(limit);
+
+        const rows = await dbSelect(sql, params);
         res.status(200).type('json').send(rows);
     } catch (err) {
         console.error(err);
