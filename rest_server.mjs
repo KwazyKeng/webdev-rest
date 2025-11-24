@@ -237,7 +237,7 @@ app.get('/incidents', async (req, res) => {
         }
 
         // most recent first + limit
-        sql += ' ORDER BY datetime(date_time) DESC';
+        sql += ' ORDER BY datetime(date_time) ASC';
         sql += ' LIMIT ?';
         params.push(limit);
 
