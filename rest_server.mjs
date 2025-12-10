@@ -15,6 +15,18 @@ let app = express();
 app.use(express.static(public_dir));
 app.use(express.json());
 
+// Allow cross-origin requests from the dev server (http://localhost:5173)
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+
+    next();
+});
 /********************************************************************
  ***   DATABASE FUNCTIONS                                         *** 
  ********************************************************************/
@@ -237,7 +249,7 @@ app.get('/incidents', async (req, res) => {
         }
 
         // most recent first + limit
-        sql += ' ORDER BY datetime(date_time) ASC';
+        sql += ' ORDER BY datetime(date_time) DESC';
         sql += ' LIMIT ?';
         params.push(limit);
 
